@@ -56,6 +56,13 @@ class SmartBedsideSystem:
         """
         # See User Story #2.
 
+        def update_spo2_alarm(self) -> None:
+            spo2 = self.read_vital_signs()  # Propagates SmartBedsideError
+            if spo2 < self.SPO2_ALARM_THRESHOLD:
+                self.activate_alarm()
+            else:
+                self.deactivate_alarm()
+
     def stop_alarm(self) -> None:
         """
         Stop the alarm if the pushbutton is pressed. Otherwise, leave the alarm unchanged.
