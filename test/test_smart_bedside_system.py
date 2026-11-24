@@ -15,6 +15,17 @@ class TestUserStory1(unittest.TestCase):
     @patch.object(max30102.DFRobot_BloodOxygen_S, "__init__", return_value=None)
     @patch.object(max30102.DFRobot_BloodOxygen_S, "begin")
     @patch.object(max30102.DFRobot_BloodOxygen_S, "sensor_start_collect")
+    def read_vital_signs(self) -> int:
+        spo2 = self.spo2_hr_sensor.get_spo2()
+
+        if spo2 == -1:
+            raise SmartBedsideError("Invalid SpO2 reading")
+
+        return int(spo2)
+
+    def manage_alarm(self) -> None:
+
+
     def test_spo2_sensor_initialization(self, mock_sensor_start_collect: MagicMock,
             mock_begin: MagicMock, mock_DFRobot_BloodOxygen_S: MagicMock):
         system = SmartBedsideSystem()
@@ -64,6 +75,8 @@ class TestUserStory2(unittest.TestCase):
         self.assertTrue(found)
         # Assert that the alarm status is initialized to OFF.
         self.assertFalse(system.alarm_on)
+
+
 
     @patch.object(GPIO, "output")
     @patch.object(SmartBedsideSystem, "read_vital_signs")
