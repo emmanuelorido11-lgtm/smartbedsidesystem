@@ -85,17 +85,6 @@ class SmartBedsideSystem:
         # See User Story #4.
 
     def set_oxygen_valve(self, angle: float) -> None:
-        """
-        Set the oxygen delivery valve to the specified angle
-        by controlling the servo motor.
-
-        Args:
-            angle (float): Target angle between 0 and 180 degrees.
-
-        Raises:
-            SmartBedsideError: If the target angle is outside
-            the valid range of 0 to 180 degrees.
-        """
 
         if not 0 <= angle <= 180:
             raise SmartBedsideError("Angle must be between 0 and 180 degrees.")
