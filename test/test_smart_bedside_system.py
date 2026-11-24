@@ -105,6 +105,26 @@ class TestUserStory2(unittest.TestCase):
         # Assert that the alarm status is initialized to OFF.
         self.assertFalse(system.alarm_on)
 
+        def __init__(self):
+            GPIO.setmode(GPIO.BOARD)
+            GPIO.setwarnings(False)
+
+            # Initialise MAX30102 sensor
+            self.spo2_hr_sensor = DFRobot_BloodOxygen_S()
+
+            # Initialise buzzer
+            GPIO.setup(self.BUZZER_PIN, GPIO.OUT, initial=GPIO.LOW)
+            self.alarm_on = False
+
+            # Initialise pushbutton
+            GPIO.setup(self.BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+            # Initialise servo
+            GPIO.setup(self.O2_SERVO_PIN, GPIO.OUT)
+            self.o2_servo = GPIO.PWM(self.O2_SERVO_PIN, 50)
+            self.o2_servo.start(0)
+            self.o2_valve_angle = 0.0
+
 
 
     @patch.object(GPIO, "output")
@@ -233,13 +253,37 @@ class TestUserStory4(unittest.TestCase):
     def test_set_o2_valve_angle_minimum(self, mock_gpio_pwm: MagicMock):
         system = SmartBedsideSystem()
         mock_gpio_pwm.return_value.reset_mock()  # Ignore servo calls made by the constructor.
-        system.set_o2_valve_angle(0)
+        system.set_o2_dvalve_angle(0)
         # Assert that the PWM duty cycle was updated to 5.0%.
         mock_gpio_pwm.return_value.ChangeDutyCycle.assert_called_once_with(5.0)
         # Assert that the stored valve angle was updated to 0 degrees.
         self.assertEqual(system.o2_valve_angle, 0)
 
     @patch.object(GPIO, "PWM")
+    def set_o2_dvalve_angle(self, angle: float) -> None:
+        """
+        Set the oxygen delivery valve to the specified angle
+        by controlling the servo motor.
+
+        Args:
+            angle (float): Target angle between 0 and 180 degrees.
+
+        Raises:
+            SmartBedsideError: If the target angle is outside
+            the valid range of 0 to 180 degrees.
+        """
+
+        if not 0 <= angle <= 180:
+            raise SmartBedsideError(
+                "Angle must be between 0 and 180 degrees."
+            )
+
+        duty_cycle = 5.0 + (angle / 180.0) * 5.0
+
+        self.o2_servo.ChangeDutyCycle(duty_cycle)
+
+        self.o2_valve_angle = angle
+
     def test_set_o2_valve_angle_maximum(self, mock_gpio_pwm: MagicMock):
         system = SmartBedsideSystem()
         mock_gpio_pwm.return_value.reset_mock()  # Ignore servo calls made by the constructor.
@@ -289,6 +333,28 @@ class TestUserStory5(unittest.TestCase):
 
     @patch.object(GPIO, "PWM")
     @patch.object(SmartBedsideSystem, "read_vital_signs")
+    def manage_oxygen_valve(self) -> None:
+        """
+        Automatically regulate the oxygen delivery valve based
+        on the patient's blood oxygen saturation (SpO2).
+
+        If SpO2 is below 95%, fully open the valve.
+        Otherwise, fully close the valve.
+
+        Raises:
+            SmartBedsideError: If the SpO2 reading is invalid.
+        """
+
+        spo2 = self.read_vital_signs()
+
+        if spo2 < 95:
+            self.o2_servo.ChangeDutyCycle(10.0)
+            self.o2_valve_angle = 180
+
+        else:
+            self.o2_servo.ChangeDutyCycle(5.0)
+            self.o2_valve_angle = 0
+
     def test_manage_oxygen_valve_open(self,
             mock_read_vital_signs: MagicMock, mock_gpio_pwm: MagicMock):
         mock_read_vital_signs.return_value = 94 # Simulate a valid SpO2 reading of 94%.
