@@ -302,6 +302,29 @@ class TestUserStory4(unittest.TestCase):
         # Assert that the servo position was not changed.
         mock_gpio_pwm.return_value.ChangeDutyCycle.assert_not_called()
 
+    def set_o2_valve_angle(self, angle: float) -> None:
+        """
+        Set the oxygen delivery valve to the specified angle.
+
+        Args:
+            angle (float): Target angle between 0 and 180 degrees.
+
+        Raises:
+            SmartBedsideError: If the target angle is outside
+            the valid range of 0 to 180 degrees.
+        """
+
+        if not 0 <= angle <= 180:
+            raise SmartBedsideError(
+                "Invalid angle. Angle must be between 0 and 180 degrees."
+            )
+
+        duty_cycle = 5.0 + (angle / 180.0) * 5.0
+
+        self.o2_servo.ChangeDutyCycle(duty_cycle)
+
+        self.o2_valve_angle = angle
+
     @patch.object(GPIO, "PWM")
     def test_set_o2_valve_angle_invalid_below_limit(self, mock_gpio_pwm: MagicMock):
         system = SmartBedsideSystem()
