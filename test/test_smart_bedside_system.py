@@ -38,6 +38,13 @@ class TestUserStory1(unittest.TestCase):
         # Assert that the sensor was stored in the spo2_hr_sensor instance variable.
         self.assertIsInstance(system.spo2_hr_sensor, max30102.DFRobot_BloodOxygen_S)
 
+    def update_spo2_alarm(self) -> None:
+        spo2 = self.read_vital_signs()  # Propagates SmartBedsideError
+        if spo2 < self.SPO2_ALARM_THRESHOLD:
+            self.activate_alarm()
+        else:
+            self.deactivate_alarm()
+
     @patch.object(max30102.DFRobot_BloodOxygen_S, "get_spo2")
     def test_read_valid_spo2(self, mock_get_spo2: MagicMock):
         mock_get_spo2.return_value = 98  # Simulate a valid SpO2 reading of 98%.
