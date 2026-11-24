@@ -38,22 +38,15 @@ class SmartBedsideSystem:
         # See User Story #1.
 
     def read_vital_signs(self) -> int:
-
         spo2 = self.spo2_hr_sensor.get_spo2()
 
-        if spo2 == -1 or spo2 is None:
-            raise SmartBedsideError("Invalid SpO₂ reading from MAX30102 sensor.")
-
-        if not 70 <= spo2 <= 100:
-            raise SmartBedsideError("SpO₂ reading is outside the valid range (70–100).")
+        if spo2 == -1:
+            raise SmartBedsideError("Invalid SpO2 reading")
 
         return int(spo2)
 
     def manage_alarm(self) -> None:
-        """
-        Activate or deactivate the alarm based on the patient's blood oxygen saturation (SpO₂).
-        Raises: SmartBedsideError: If the SpO₂ reading is invalid (propagated from read_vital_signs()).
-        """
+
         # See User Story #2.
 
         def update_spo2_alarm(self) -> None:
@@ -75,6 +68,14 @@ class SmartBedsideSystem:
                 GPIO.output(self.BUZZER_PIN, GPIO.LOW)
                 self.alarm_on = False
 
+        def stop_alarm(self) -> None:
+
+            if GPIO.input(self.BUTTON_PIN) == GPIO.LOW:
+                GPIO.output(self.BUZZER_PIN, GPIO.LOW)
+                self.alarm_on = False
+
+                GPIO.setup(self.BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
     def set_o2_valve_angle(self, angle: float) -> None:
         """
         Set the oxygen delivery valve to the specified angle by controlling the servo motor.
@@ -84,11 +85,20 @@ class SmartBedsideSystem:
         # See User Story #4.
 
     def set_oxygen_valve(self, angle: float) -> None:
+        """
+        Set the oxygen delivery valve to the specified angle
+        by controlling the servo motor.
+
+        Args:
+            angle (float): Target angle between 0 and 180 degrees.
+
+        Raises:
+            SmartBedsideError: If the target angle is outside
+            the valid range of 0 to 180 degrees.
+        """
 
         if not 0 <= angle <= 180:
-            raise SmartBedsideError(
-                "Invalid angle. The angle must be between 0 and 180 degrees."
-            )
+            raise SmartBedsideError("Angle must be between 0 and 180 degrees.")
 
         duty_cycle = 2.5 + (angle / 180.0) * 10
 
@@ -106,3 +116,10 @@ class SmartBedsideSystem:
         Raises: SmartBedsideError: If the SpO₂ reading is invalid (propagated from read_vital_signs()).
         """
         # See User Story #5.
+def regulate_oxygen(self) -> None:
+    spo2 = self.read_vital_signs()
+
+    if spo2 < 95:
+        self.set_oxygen_valve(180)
+    else:
+        self.set_oxygen_valve(0)
