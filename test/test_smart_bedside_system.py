@@ -51,7 +51,18 @@ class TestUserStory1(unittest.TestCase):
         system = SmartBedsideSystem()
         spo2 = system.read_vital_signs()
         # Assert that the returned SpO2 value matches the sensor reading
-        self.assertEqual(spo2, 98)
+        self.assertEqual(spo2, 98
+
+                         @ patch.object(max30102.DFRobot_BloodOxygen_S, "get_spo2")
+
+        def test_read_valid_spo2(self, mock_get_spo2: MagicMock):
+            mock_get_spo2.return_value = 98
+
+            system = SmartBedsideSystem()
+
+            spo2 = system.read_vital_signs()
+
+            self.assertEqual(spo2, 98)
 
     @patch.object(max30102.DFRobot_BloodOxygen_S, "get_spo2")
     def test_read_invalid_spo2(self, mock_get_spo2: MagicMock):
@@ -59,6 +70,17 @@ class TestUserStory1(unittest.TestCase):
         system = SmartBedsideSystem()
         # Assert that SmartBedsideError is raised when the sensor returns -1.
         self.assertRaises(SmartBedsideError, system.read_vital_signs)
+
+        @patch.object(max30102.DFRobot_BloodOxygen_S, "get_spo2")
+        def test_read_invalid_spo2(self, mock_get_spo2: MagicMock):
+            mock_get_spo2.return_value = -1
+
+            system = SmartBedsideSystem()
+
+            self.assertRaises(
+                SmartBedsideError,
+                system.read_vital_signs
+            )
 
 
 ##########################################################################################
